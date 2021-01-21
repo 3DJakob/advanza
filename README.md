@@ -1,6 +1,6 @@
 # Advanza
 
-Advanza is an Electron and React app to keep tabs on your stocks at Avanza.
+Advanza is an Electron and React app to keep tabs on your stocks at Avanza. This app is a work in progress and not in a production ready state at the moment.
 
 ## Available Scripts
 
