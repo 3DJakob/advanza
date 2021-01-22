@@ -3,9 +3,13 @@ const electron = require('electron')
 const app = electron.app
 // Module to create native browser window.
 const BrowserWindow = electron.BrowserWindow
+const { ipcMain } = require('electron')
 
 const path = require('path')
 const url = require('url')
+
+const Avanza = require('avanza')
+const avanza = new Avanza()
 
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the JavaScript object is garbage collected.
@@ -13,7 +17,13 @@ let mainWindow
 
 function createWindow () {
   // Create the browser window.
-  mainWindow = new BrowserWindow({ width: 800, height: 600 })
+  mainWindow = new BrowserWindow({
+    width: 800,
+    height: 600,
+    webPreferences: {
+      nodeIntegration: true
+    }
+  })
 
   // and load the index.html of the app.
   mainWindow.loadURL('http://localhost:3000')
@@ -54,3 +64,43 @@ app.on('activate', function () {
 
 // In this file you can include the rest of your app's specific main process
 // code. You can also put them in separate files and require them here.
+
+ipcMain.on('hello', (event, arg) => {
+  console.log(arg)
+})
+
+const authenticate = async (login) => {
+  return new Promise((resolve, reject) => {
+    const res = avanza.authenticate({
+      username: login.userName,
+      password: login.password,
+      totpSecret: login.totpSecret
+    }).then(() => {
+      console.log(res)
+      resolve()
+    }).catch((error) => {
+      console.log(error)
+      reject(error)
+    })
+  })
+}
+
+ipcMain.on('connect', (event, arg) => {
+  const login = JSON.parse(arg)
+  authenticate(login).then(async () => {
+    const positions = await avanza.getPositions()
+    event.reply('positions', JSON.stringify(positions))
+  }).catch(
+    'chart', 'error'
+  )
+})
+
+ipcMain.on('chartData', (event, arg) => {
+  const login = JSON.parse(arg)
+  authenticate(login).then(async () => {
+    const chartData = await avanza.getChartdata('3901', Avanza.ONE_WEEK)
+    event.reply('chart', JSON.stringify(chartData))
+  }).catch(
+    'chart', 'error'
+  )
+})
